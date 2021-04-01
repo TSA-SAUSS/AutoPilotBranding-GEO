@@ -112,7 +112,7 @@ if ($config.Config.Language) {
 }
 
 # STEP 9: Add features on demand
-if($config.Config.AddFeatures.Feature){
+if($config.Config.AddFeatures.Feature) {
 	$path = "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU"
 	$currentWU = (Get-ItemProperty -Path $path -ErrorAction Ignore).UseWuServer
 	if ($currentWU -eq 1)
@@ -133,19 +133,27 @@ if($config.Config.AddFeatures.Feature){
 	}
 }
 
-# STEP 10: Customize default apps
+# STEP 10: Enable optional features
+if($config.Config.EnableFeatures.Feature) {
+	$config.Config.EnableFeatures.Feature | ForEach-Object {
+		Write-Host "Enabling Windows feature: $_"
+		Enable-WindowsOptionalFeature -Online -FeatureName $_
+	}
+}
+
+# STEP 11: Customize default apps
 if ($config.Config.DefaultApps) {
 	Write-Host "Setting default apps: $($config.Config.DefaultApps)"
 	& Dism.exe /Online /Import-DefaultAppAssociations:`"$PSScriptRoot\$($config.Config.DefaultApps)`"
 }
 
-# STEP 11: Set registered user and organization
+# STEP 12: Set registered user and organization
 Write-Host "Configuring registered user information"
 $path = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
 Set-ItemProperty -Path $path -Name "RegisteredOwner" -Type String -Value "$($config.Config.RegisteredOwner)" -Force
 Set-ItemProperty -Path $path -Name "RegisteredOrganization" -Type String -Value "$($config.Config.RegisteredOrganization)" -Force
 
-# STEP 12: Configure OEM branding info
+# STEP 13: Configure OEM branding info
 if ($config.Config.OEMInfo)
 {
 	Write-Host "Configuring OEM branding info"
@@ -159,7 +167,7 @@ if ($config.Config.OEMInfo)
 	Set-ItemProperty -Path $path -Name "Logo" -Type String -Value "C:\Windows\$($config.Config.OEMInfo.Logo)" -Force
 }
 
-# STEP 13: Enable UE-V
+# STEP 14: Enable UE-V
 if($config.Config.EnableUEV -eq 1) {
 	Write-Host "Enabling UE-V"
 	Enable-UEV
@@ -170,13 +178,13 @@ if($config.Config.EnableUEV -eq 1) {
 	}
 }
 
-# STEP 14: Disable network location fly-out
+# STEP 15: Disable network location fly-out
 if($config.Config.NewNetworkWindowOff -eq 1) {
 	Write-Host "Turning off network location fly-out"
 	New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Network\" -Name "NewNetworkWindowOff" -Force
 }
 
-# STEP 15: Set SearchboxTaskbarMode
+# STEP 16: Set SearchboxTaskbarMode
 # 0: Hidden
 # 1: Show Search Icon
 # 2: Show Search Box
@@ -188,7 +196,7 @@ if($config.Config.SearchboxTaskbarMode){
 	Set-ItemProperty -Path $path -Name "SearchboxTaskbarMode" -Type DWord -Value $config.Config.SearchboxTaskbarMode -Force
 }
 
-# STEP 16: ShowCortanaButton
+# STEP 17: ShowCortanaButton
 if($config.Config.ShowCortanaButton){
 	$path = "HKLM:\TempUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 	If( -not (Test-Path -Path $path)) {
@@ -197,7 +205,7 @@ if($config.Config.ShowCortanaButton){
 	Set-ItemProperty -Path $path -Name "ShowCortanaButton" -Type DWord -Value $config.Config.ShowCortanaButton -Force
 }
 
-# STEP 17: ShowTaskViewButton
+# STEP 18: ShowTaskViewButton
 if($config.Config.ShowTaskViewButton){
 	$path = "HKLM:\TempUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 	If( -not (Test-Path -Path $path)) {
@@ -206,7 +214,7 @@ if($config.Config.ShowTaskViewButton){
 	Set-ItemProperty -Path $path -Name "ShowTaskViewButton" -Type DWord -Value $config.Config.ShowTaskViewButton -Force
 }
 
-# STEP 18: Delete 3D Objects link from File Explorer
+# STEP 19: Delete 3D Objects link from File Explorer
 if($config.Config.Delete3DObjectsLink -eq 1) {
 	Write-Host "Deleting 3D Objects link from File Explorer"
 	$path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"

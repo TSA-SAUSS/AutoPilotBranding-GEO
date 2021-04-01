@@ -24,10 +24,8 @@
   </RemoveApps>
   -->
 
-  <!-- Uncomment to update OneDrive
   <OneDriveSetup>https://go.microsoft.com/fwlink/?linkid=844652</OneDriveSetup>
-  -->
-
+ 
   <!-- If you do add a language pack, make sure you add these language add-ons for each one.
   <AddFeatures>
     <Feature>Language.Basic~~~es-ES~0.0.1.0</Feature>
@@ -39,6 +37,11 @@
     <Feature>NetFX3~~~~</Feature> 
   </AddFeatures>
   -->
+
+  <EnableFeatures>
+    <Feature>Microsoft-Hyper-V-All</Feature>
+  </EnableFeatures>
+
 
   <!-- If you want to set a language, customize Language.xml and reference the file
   <Language>Language.xml</Language>
