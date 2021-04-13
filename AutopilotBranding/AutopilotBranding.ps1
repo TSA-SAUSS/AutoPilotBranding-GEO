@@ -8,6 +8,8 @@ if ("$env:PROCESSOR_ARCHITEW6432" -ne "ARM64")
     }
 }
 
+$exitCode = 0
+
 # Create a tag file just so Intune knows this was installed
 if (-not (Test-Path "$env:ProgramData\Microsoft\AutopilotBranding"))
 {
@@ -191,27 +193,36 @@ if($config.Config.NewNetworkWindowOff -eq 1) {
 # 1: Show Search Icon
 # 2: Show Search Box
 if($config.Config.SearchboxTaskbarMode){
+	Write-Host "Setting SearchboxTaskbarMode"
 	$path = "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Search"
 	If( -not (Test-Path -Path $path)) {
-		New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\" -Name "Search" -Force
+		$result = New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\" -Name "Search" -Force
+		$result.Handle.Close()
+		$result = $null
 	}
-	Set-ItemProperty -Path $path -Name "SearchboxTaskbarMode" -Type DWord -Value $config.Config.SearchboxTaskbarMode -Force
+	$result = Set-ItemProperty -Path $path -Name "SearchboxTaskbarMode" -Type DWord -Value $config.Config.SearchboxTaskbarMode -Force
 }
 
 # STEP 17: ShowCortanaButton
 if($config.Config.ShowCortanaButton){
+	Write-Host "Setting ShowCortanaButton"
 	$path = "HKLM:\TempUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 	If( -not (Test-Path -Path $path)) {
-		New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "Advanced" -Force
+		$result = New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "Advanced" -Force
+		$result.Handle.Close()
+		$result = $null
 	}
 	Set-ItemProperty -Path $path -Name "ShowCortanaButton" -Type DWord -Value $config.Config.ShowCortanaButton -Force
 }
 
 # STEP 18: ShowTaskViewButton
 if($config.Config.ShowTaskViewButton){
+	Write-Host "Setting ShowTaskViewButton"
 	$path = "HKLM:\TempUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 	If( -not (Test-Path -Path $path)) {
-		New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "Advanced" -Force
+		$result = New-Item -Path "HKLM:\TempUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "Advanced" -Force
+		$result.Handle.Close()
+		$result = $null
 	}
 	Set-ItemProperty -Path $path -Name "ShowTaskViewButton" -Type DWord -Value $config.Config.ShowTaskViewButton -Force
 }
@@ -220,30 +231,31 @@ if($config.Config.ShowTaskViewButton){
 if($config.Config.Delete3DObjectsLink -eq 1) {
 	Write-Host "Deleting 3D Objects link from File Explorer"
 	$path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"
-	If(Test-Path -Path $path) {Remove-Item -Path $path}
+	If(Test-Path -Path $path) { Remove-Item -Path $path }
 	$path = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"
-	If(Test-Path -Path $path) {Remove-Item -Path $path}
+	If(Test-Path -Path $path) { Remove-Item -Path $path }
 }
 
 #Unload the default user registry hive
-Write-Host "Unload the default user registry hive"
+
 if($config.Config.Theme -or $config.Config.SearchboxTaskbarMode -or $config.Config.ShowCortanaButton -or $config.Config.ShowTaskViewButton) {
 	$unloaded = $false
 	$attempts = 0
 	while ((-not $unloaded) -and ($attempts -le 10)) {
-		[gc]::Collect() # necessary call to be able to unload registry hive
+		$attempts += 1
+		Write-Host "Unload the default user registry hive.  Attempt $attempts."
+		[gc]::Collect()
+		Start-Sleep -Seconds 5
 		& reg.exe unload HKLM\TempUser
 		$unloaded = $?
-		$attempts += 1
 	}
-	if (!$unloaded) {
+	if (-not $unloaded) {
 		Write-Warning "Unable to dismount default user registry hive at HKLM\TempUser - manual dismount required"
+		Write-Warning "Setting exit code to 3010 - Soft Reboot"
+		$exitCode = 3010 # Soft Reboot
 	}
 }
 
 Stop-Transcript
 
-if($config.Config.Theme -or $config.Config.SearchboxTaskbarMode -or $config.Config.ShowCortanaButton -or $config.Config.ShowTaskViewButton) {
-	#Soft Restart
-	Exit 3010
-}
+Exit $exitCode

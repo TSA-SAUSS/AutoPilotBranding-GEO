@@ -44,7 +44,6 @@
     <Feature>Microsoft-Hyper-V-All</Feature>
   </EnableFeatures>
 
-
   <!-- If you want to set a language, customize Language.xml and reference the file
   <Language>Language.xml</Language>
   -->
