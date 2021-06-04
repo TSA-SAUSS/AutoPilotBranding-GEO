@@ -1,3 +1,5 @@
+# THIS REPO HAS BEEN MOVED TO THE SAUSS INTUNEAPPS REPO 
+
 # Autopilot Branding
 
 This repository contains a sample PowerShell script that can be packaged into an Intune Win32 app to customize Windows 10 devices via Windows Autopilot
